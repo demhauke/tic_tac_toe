@@ -1,4 +1,7 @@
-import pygame
+import pygame, socketio
+
+
+
 pygame.init()
 from gui import GUI
 
@@ -9,9 +12,16 @@ class Client:
 
         #self.create_gui()
 
-        self.init_game()
 
         self.player_blue = True
+        self.player = 'x'
+        self.current_player = 'x'
+
+        self.current_game = [
+            ["", "", ""],
+            ["", "", ""],
+            ["", "", ""]
+        ]
 
     def create_gui(self):
         self.start_gui = GUI()
@@ -46,19 +56,9 @@ class Client:
 
         self.current_mode = self.tic_tac_toe_mode
 
-    def init_game(self, game=False):
-        if game:
-            self.current_game = game
-            return
-        
-        self.current_game = [
-            ["", "", ""],
-            ["", "", ""],
-            ["", "", ""]
-        ]
 
     def zug_to_pos(self, zug):
-        return (zug % 3, zug // 3)
+        return [zug % 3, zug // 3]
     
     def pos_to_zug(self, pos):
         return pos[0] + pos[1] * 3 
@@ -69,6 +69,9 @@ class Client:
         return False
     
     def check_if_game_over(self):
+        pass
+
+    def draw_tic_tac_toe(self):
         pass
 
     
@@ -99,12 +102,23 @@ class Client:
             self.current_game[pos[0]][pos[1]] = "x"
             self.player_blue = True
 
+    def switch_currentplayer(self):
+        if self.player == 'o':
+            self.current_player = 'x'
+        else:
+            self.current_player = 'o'
+
     def tic_tac_toe_input(self, input):
+
+        if self.player != self.current_player:
+            return
 
         pos = self.zug_to_pos(input)
 
         if not self.check_if_empty(pos[0], pos[1]):
             return
+        
+
         
         if self.player_blue:
             self.game_gui.buttons[-1].draw_o(self.screen, pos)
@@ -117,9 +131,19 @@ class Client:
             self.player_blue = True
 
 
+        send_zug(pos)
+
+    def draw(self):
+        self.current_gui.draw()
+
+
+
 
     def start_mode(self):
         pass
+
+    def start_game(self):
+        print("spiel startet")
         
 
     def run(self):
@@ -140,23 +164,65 @@ class Client:
 
 client = Client()
 
+sio = socketio.Client()
+
+@sio.event
+def connect():
+    print("Connected")
+
+
+sio.connect('http://45.9.60.185:8903', transports=['websocket'])
+
 def send_room_code(code):
     print(f"{code} wurde gesendet")
+    sio.emit("sendCode", code)
 
-def send_zug():
-    pass
+def send_zug(pos):
+    sio.emit('move', pos)
 
 def spiel_startet():
     pass
 
-def get_gegnerzug():
-    pass
+def get_board(data):
+    print(data)
+    client.current_game = data['gameboard']
+    client.current_gui.draw()
+    client.switch_currentplayer()
 
-def spieler2_joint():
-    pass
+def spieler2_joint(data):
+    client.current_player = client.player
+    client.start_game()
 
-def join():
-    pass
+def code_recieved(data):
+    print(data) # {'roomName': 'a', 'gameboard': [['0', '0', '0'], ['0', '0', '0'], ['0', '0', '0']], 'users': 1, 'currentTurn': 0, 'char': 'x'}
+    client.current_game = data['gameboard']
+
+
+    client.player = data['char']
+
+    if client.player == 'o':
+        client.current_player = 'x'
+    else:
+        client.current_player = 'o'
+
+
+    #client.player = client.player_blue
+
+    if data['users'] == 2:
+        client.start_game()
+
+
+
+
+
+sio.on("codeReceived", code_recieved)
+sio.on("userJoined", spieler2_joint)
+sio.on("getBoard", get_board)
+
+code = input("Code: ")
+
+send_room_code(code)
+
 
 
 client.create_gui()

@@ -73,7 +73,7 @@ class Tic_Tac_Toe_field:
 
         self.client.tic_tac_toe_input(self.client.pos_to_zug((x, y)))
 
-    def draw(self, screen):
+    def drawgg(self, screen):
         # Horizontale Linien
         pygame.draw.line(screen, "white", self.pos + pygame.Vector2(0, self.length / 3), self.pos + pygame.Vector2(self.length, self.length / 3))
         pygame.draw.line(screen, "white", self.pos + pygame.Vector2(0, 2 * self.length / 3), self.pos + pygame.Vector2(self.length, 2 * self.length / 3))
@@ -81,6 +81,17 @@ class Tic_Tac_Toe_field:
         # Vertikale Linien
         pygame.draw.line(screen, "white", self.pos + pygame.Vector2(self.length / 3, 0), self.pos + pygame.Vector2(self.length / 3, self.length))
         pygame.draw.line(screen, "white", self.pos + pygame.Vector2(2 * self.length / 3, 0), self.pos + pygame.Vector2(2 * self.length / 3, self.length))
+
+    def draw(self, screen):
+        self.drawgg(screen)
+        for y, y_val in enumerate(self.client.current_game):
+            for x, val in enumerate(y_val):
+                if val == '':
+                    continue
+                elif val == 'x':
+                    self.draw_x(screen, (x, y))
+                else:
+                    self.draw_o(screen, (x, y))
 
 
     def draw_o(self, screen, pos):
