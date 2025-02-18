@@ -37,7 +37,7 @@ class Client:
         self.start_gui.create_button((200, 150), "Starte Tic Tac Toe", self.start_game_gui)
         self.start_gui.create_button((200, 250), "Anmelden", self.enter_room_code)
 
-        self.game_gui.draw()
+        self.start_gui.draw()
 
         self.current_gui = self.game_gui
         self.current_mode = self.tic_tac_toe_mode
@@ -50,7 +50,7 @@ class Client:
 
 
     def start_game_gui(self):
-        self.current_gui = self.game_gui
+        self.current_gui = self.start_gui
         self.screen.fill("black")
         self.current_gui.draw()
 
@@ -164,15 +164,6 @@ class Client:
 
 client = Client()
 
-sio = socketio.Client()
-
-@sio.event
-def connect():
-    print("Connected")
-
-
-sio.connect('http://45.9.60.185:8903', transports=['websocket'])
-
 def send_room_code(code):
     print(f"{code} wurde gesendet")
     sio.emit("sendCode", code)
@@ -212,16 +203,23 @@ def code_recieved(data):
         client.start_game()
 
 
+sio = socketio.Client()
 
+@sio.event
+def connect():
+    print("Connected")
+
+def connect_to_server():
+    sio.connect('http://45.9.60.185:8903', transports=['websocket'])
+
+    code = input("Code: ")
+
+    send_room_code(code)
 
 
 sio.on("codeReceived", code_recieved)
 sio.on("userJoined", spieler2_joint)
 sio.on("getBoard", get_board)
-
-code = input("Code: ")
-
-send_room_code(code)
 
 
 
