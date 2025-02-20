@@ -6,6 +6,7 @@ font = pygame.font.SysFont(None, 48)
 class GUI:
     def __init__(self):
         self.screen = pygame.display.get_surface()
+        self.maus_gedrückt = False
 
         self.texts = []
         self.buttons = []
@@ -13,8 +14,8 @@ class GUI:
     def create_button(self, pos, text, func):
         self.buttons.append(Button(pos, text, func))
 
-    def create_text(self, pos, text):
-        self.texts.append(Text(pos, text))
+    def create_text(self, pos, text, getter=False):
+        self.texts.append(Text(pos, text, getter))
 
     def create_tictactoe_field(self, pos, lenght, client):
         self.buttons.append(Tic_Tac_Toe_field(pos, lenght, client))
@@ -25,6 +26,11 @@ class GUI:
             element.draw(self.screen)
 
     def update(self):
+        #self.mouse_pressed = mouse_down
+       # for event in pygame.event.get():
+       #     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Linke Maustaste
+       #         for element in self.buttons:
+      #              element.update()
         if not pygame.mouse.get_pressed()[0]:
             return
             
@@ -33,12 +39,19 @@ class GUI:
 
 
 class Text:
-    def __init__(self, pos, text):
+    def __init__(self, pos, text, getter):
         self.pos = pos
         self.text = text
+
+        if getter:
+            self.get_text = getter
+
+    def get_text(self):
+        return self.text
         
     def draw(self, screen):
-        rendered_text = font.render(self.text, True, "white", None)
+        
+        rendered_text = font.render(self.get_text(), True, "white", None)
         self.rect = rendered_text.get_rect(topleft=self.pos)
         self.rect.x = self.pos[0] - rendered_text.get_width() / 2
         screen.blit(rendered_text, (self.pos[0] - rendered_text.get_width() / 2, self.pos[1]))
@@ -46,7 +59,7 @@ class Text:
 
 class Button(Text):
     def __init__(self, pos, text, func):
-        super().__init__(pos, text)
+        super().__init__(pos, text, False)
 
         self.func = func
 
@@ -71,7 +84,7 @@ class Tic_Tac_Toe_field:
         if not (0 <= x <= 2 and 0 <= y <= 2):
             return
 
-        self.client.tic_tac_toe_input(self.client.pos_to_zug((x, y)))
+        self.client.tic_tac_toe_input([x, y])
 
     def drawgg(self, screen):
         # Horizontale Linien

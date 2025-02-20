@@ -12,8 +12,6 @@ class Client:
 
         #self.create_gui()
 
-
-        self.player_blue = True
         self.player = 'x'
         self.current_player = 'x'
 
@@ -28,7 +26,7 @@ class Client:
         self.game_gui = GUI()
 
         self.game_gui.create_text((200, 20), "Spiel 1")
-        self.game_gui.create_text((200, 90), "Status")
+        self.game_gui.create_text((200, 90), "Status", getter=self.get_status)
 
         self.game_gui.create_tictactoe_field((100, 140), 200, self)
 
@@ -39,22 +37,25 @@ class Client:
 
         self.start_gui.draw()
 
-        self.current_gui = self.game_gui
-        self.current_mode = self.tic_tac_toe_mode
+        self.current_gui = self.start_gui
         #gui.draw_tic_tac_toe_field()
 
     def enter_room_code(self):
         code = input("Was ist der Raum Code")
         send_room_code(str(code))
 
+    def get_status(self):
+        return self.player
+
 
 
     def start_game_gui(self):
-        self.current_gui = self.start_gui
+        connect_to_server()
+        self.current_gui = self.game_gui
         self.screen.fill("black")
         self.current_gui.draw()
 
-        self.current_mode = self.tic_tac_toe_mode
+
 
 
     def zug_to_pos(self, zug):
@@ -71,39 +72,9 @@ class Client:
     def check_if_game_over(self):
         pass
 
-    def draw_tic_tac_toe(self):
-        pass
-
-    
-    def tic_tac_toe_mode(self):
-
-        wert = input("feld: ")
-        print(self.zug_to_pos(int(wert)))
-
-        pos = self.zug_to_pos(int(wert))
-
-        
-        while not self.check_if_empty(pos[0], pos[1]):
-
-            wert = input("feld: ")
-            print(self.zug_to_pos(int(wert)))
-
-            pos = self.zug_to_pos(int(wert))
-
-
-
-        if self.player_blue:
-            self.game_gui.buttons[-1].draw_o(self.screen, pos)
-            self.current_game[pos[0]][pos[1]] = "o"
-            self.player_blue = False
-
-        else:
-            self.game_gui.buttons[-1].draw_x(self.screen, pos)
-            self.current_game[pos[0]][pos[1]] = "x"
-            self.player_blue = True
 
     def switch_currentplayer(self):
-        if self.player == 'o':
+        if self.current_player == 'o':
             self.current_player = 'x'
         else:
             self.current_player = 'o'
@@ -112,28 +83,20 @@ class Client:
 
         if self.player != self.current_player:
             return
+        
+        self.switch_currentplayer()
 
-        pos = self.zug_to_pos(input)
 
-        if not self.check_if_empty(pos[0], pos[1]):
-            return
+        #if not self.check_if_empty(input[0], input[1]):
+        #    return
         
 
-        
-        if self.player_blue:
-            self.game_gui.buttons[-1].draw_o(self.screen, pos)
-            self.current_game[pos[0]][pos[1]] = "o"
-            self.player_blue = False
 
-        else:
-            self.game_gui.buttons[-1].draw_x(self.screen, pos)
-            self.current_game[pos[0]][pos[1]] = "x"
-            self.player_blue = True
+        send_zug(input)
 
-
-        send_zug(pos)
 
     def draw(self):
+        self.screen.fill('black')
         self.current_gui.draw()
 
 
@@ -144,6 +107,7 @@ class Client:
 
     def start_game(self):
         print("spiel startet")
+        self.draw()
         
 
     def run(self):
@@ -160,16 +124,22 @@ class Client:
 
             self.current_gui.update()
             pygame.display.flip()
-            #self.current_mode()
 
 client = Client()
 
-def send_room_code(code):
+def send_room_code(code, spielart):
     print(f"{code} wurde gesendet")
-    sio.emit("sendCode", code)
+    sio.emit("sendCode", [code, spielart])
+
+def send_anmelden(username, passwort):
+    sio.emit("login", [username, passwort])
+
+def send_register(username, passwort):
+    sio.emit("register", [username, passwort])
 
 def send_zug(pos):
     sio.emit('move', pos)
+    print(pos)
 
 def spiel_startet():
     pass
@@ -177,8 +147,10 @@ def spiel_startet():
 def get_board(data):
     print(data)
     client.current_game = data['gameboard']
-    client.current_gui.draw()
+    client.draw()
+    client.game_gui.buttons[-1].draw(client.screen)
     client.switch_currentplayer()
+    print(client.current_player)
 
 def spieler2_joint(data):
     client.current_player = client.player
@@ -190,6 +162,7 @@ def code_recieved(data):
 
 
     client.player = data['char']
+    print(client.player)
 
     if client.player == 'o':
         client.current_player = 'x'
@@ -202,6 +175,12 @@ def code_recieved(data):
     if data['users'] == 2:
         client.start_game()
 
+def get_winner(winner):
+    print(winner)
+
+def get_all_rooms(rooms):
+    print(rooms)
+
 
 sio = socketio.Client()
 
@@ -210,6 +189,7 @@ def connect():
     print("Connected")
 
 def connect_to_server():
+    print('Connect')
     sio.connect('http://45.9.60.185:8903', transports=['websocket'])
 
     code = input("Code: ")
@@ -220,6 +200,7 @@ def connect_to_server():
 sio.on("codeReceived", code_recieved)
 sio.on("userJoined", spieler2_joint)
 sio.on("getBoard", get_board)
+sio.on("winner", get_winner)
 
 
 
