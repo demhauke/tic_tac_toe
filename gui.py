@@ -125,7 +125,7 @@ class Tic_Tac_Toe_field:
                     continue
                 elif val == 'x':
                     self.draw_x(screen, (x, y))
-                else:
+                elif val == 'o':
                     self.draw_o(screen, (x, y))
 
 
