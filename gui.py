@@ -17,6 +17,9 @@ class GUI:
     def create_text(self, pos, text, getter=False):
         self.texts.append(Text(pos, text, getter))
 
+    def create_liste(self, pos, getter, sender):
+        self.buttons.append(Liste(pos, getter, sender))
+
     def create_tictactoe_field(self, pos, lenght, client):
         self.buttons.append(Tic_Tac_Toe_field(pos, lenght, client))
 
@@ -26,13 +29,11 @@ class GUI:
             element.draw(self.screen)
 
     def update(self):
-        #self.mouse_pressed = mouse_down
-       # for event in pygame.event.get():
-       #     if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:  # Linke Maustaste
-       #         for element in self.buttons:
-      #              element.update()
-        if not pygame.mouse.get_pressed()[0]:
+
+        if self.maus_gedrückt == pygame.mouse.get_pressed()[0]:
             return
+
+        self.maus_gedrückt = pygame.mouse.get_pressed()[0]
             
         for element in self.buttons:
             element.update()
@@ -68,6 +69,27 @@ class Button(Text):
         if self.rect.collidepoint(pygame.mouse.get_pos()):
             
             self.func()
+
+class Liste():
+    def __init__(self, pos, getter, sender):
+        self.pos = pygame.Vector2(pos)
+        self.getter = getter
+        self.sender = sender
+
+        self.elements = []
+
+    def draw(self, screen):
+        self.elements = []
+        for index, text in enumerate(self.getter()):
+            self.elements.append(Text(self.pos + pygame.Vector2(0, index * 50), text))
+            self.elements[index].draw(screen)
+
+
+    def update(self):
+        for index, element in enumerate(self.elements):
+            if self.rect.collidepoint(pygame.mouse.get_pos()):
+                self.sender(index)
+
             
 class Tic_Tac_Toe_field:
     def __init__(self, pos, length, client):

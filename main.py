@@ -21,9 +21,14 @@ class Client:
             ["", "", ""]
         ]
 
+        self.online = True
+        self.game_mode = "normal"
+        self.currentTurn = 0
+
     def create_gui(self):
         self.start_gui = GUI()
         self.game_gui = GUI()
+        self.raueme_gui = GUI()
 
         self.game_gui.create_text((200, 20), "Spiel 1")
         self.game_gui.create_text((200, 90), "Status", getter=self.get_status)
@@ -32,8 +37,9 @@ class Client:
 
 
         self.start_gui.create_text((200, 50), "Tic Tac Toe")
-        self.start_gui.create_button((200, 150), "Starte Tic Tac Toe", self.start_game_gui)
-        self.start_gui.create_button((200, 250), "Anmelden", self.enter_room_code)
+        self.start_gui.create_button((200, 150), "Online Spielen", self.start_online_game)
+        self.start_gui.create_button((200, 250), "Offline Spielen", self.start_offline_game)
+        self.start_gui.create_button((200, 350), "Anmelden", self.enter_room_code)
 
         self.start_gui.draw()
 
@@ -47,16 +53,31 @@ class Client:
     def get_status(self):
         return self.player
 
+    def start_online_game(self):
+        print("Online")
+        self.online = True
+        connect_to_server()
+        self.start_game_gui()
+
+    def start_offline_game(self):
+        print("offline")
+        self.online = False
+        self.start_game_gui()
 
 
     def start_game_gui(self):
-        connect_to_server()
         self.current_gui = self.game_gui
         self.screen.fill("black")
         self.current_gui.draw()
 
+    def offline_verarbeitung(self, pos):
+        if not self.check_if_empty(pos[0], pos[1]):
+            return
+        
+        self.current_game[pos[1]][pos[0]] = self.current_player
 
 
+        
 
     def zug_to_pos(self, zug):
         return [zug % 3, zug // 3]
@@ -65,12 +86,15 @@ class Client:
         return pos[0] + pos[1] * 3 
     
     def check_if_empty(self, x, y):
-        if self.current_game[x][y] == "":
+        if self.current_game[y][x] == "":
             return True
         return False
     
-    def check_if_game_over(self):
+    def check_if_winning(self):
         pass
+        #for i in range(3):
+        #    if self.current_game[i]
+
 
 
     def switch_currentplayer(self):
@@ -79,7 +103,7 @@ class Client:
         else:
             self.current_player = 'o'
 
-    def tic_tac_toe_input(self, input):
+    def tic_tac_toe_input(self, pos):
 
         if self.player != self.current_player:
             return
@@ -87,19 +111,20 @@ class Client:
         self.switch_currentplayer()
 
 
-        #if not self.check_if_empty(input[0], input[1]):
+        #if not self.check_if_empty(pos[0], pos[1]):
         #    return
         
 
-
-        send_zug(input)
+        if self.game_mode == 'online':
+            sio.emit('move', pos)
+            print(pos)
+        else:
+            self.offline_verarbeitung(pos)
 
 
     def draw(self):
         self.screen.fill('black')
         self.current_gui.draw()
-
-
 
 
     def start_mode(self):
@@ -136,10 +161,6 @@ def send_anmelden(username, passwort):
 
 def send_register(username, passwort):
     sio.emit("register", [username, passwort])
-
-def send_zug(pos):
-    sio.emit('move', pos)
-    print(pos)
 
 def spiel_startet():
     pass
