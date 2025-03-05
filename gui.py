@@ -51,10 +51,11 @@ class Text:
         return self.text
         
     def draw(self, screen):
-        
-        rendered_text = font.render(self.get_text(), True, "white", None)
+        rendered_text = font.render(self.get_text(), True, "black", None)
         self.rect = rendered_text.get_rect(topleft=self.pos)
         self.rect.x = self.pos[0] - rendered_text.get_width() / 2
+
+        pygame.draw.rect(screen, "white", self.rect)
         screen.blit(rendered_text, (self.pos[0] - rendered_text.get_width() / 2, self.pos[1]))
 
 
