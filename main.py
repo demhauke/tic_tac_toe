@@ -8,7 +8,7 @@ from gui import GUI
 class Client:
     def __init__(self):
 
-        self.screen = pygame.display.set_mode((400, 400))
+        self.screen = pygame.display.set_mode((600, 400))
 
         #self.create_gui()
 
@@ -30,29 +30,55 @@ class Client:
         self.start_gui = GUI()
         self.game_gui = GUI()
         self.raueme_gui = GUI()
+        self.verbinden_gui = GUI()
+        self.raueme_aussuchen_gui = GUI()
 
 
-        self.raueme_gui.create_button((200, 150), "normal", self.start_normal)
-        self.raueme_gui.create_button((200, 250), "ultimate", self.start_ultimate)
-        self.raueme_gui.create_button((200, 350), "limited", self.start_limited)
+        self.raueme_aussuchen_gui.create_text((300, 100), "Wähle einen Raum aus")
+        self.raueme_aussuchen_gui.create_liste((300, 200), )
 
-        self.game_gui.create_text((200, 20), "")
-        self.game_gui.create_text((200, 20), "spieler", getter=self.get_spieler)
-        self.game_gui.create_text((200, 90), "Status", getter=self.get_status)
+        self.verbinden_gui.create_button((300, 150), "Raum aussuchen", self.start_raum_aussuchen)
+        self.verbinden_gui.create_button((300, 250), "Code eingeben", self.start_code_eingeben)
+        self.verbinden_gui.create_button((300, 350), "Matchmaking", self.start_matchmaking)
 
-        self.game_gui.create_tictactoe_field((100, 140), 200, self)
+        self.raueme_gui.create_button((300, 150), "normal", self.start_normal)
+        self.raueme_gui.create_button((300, 250), "ultimate", self.start_ultimate)
+        self.raueme_gui.create_button((300, 350), "limited", self.start_limited)
+
+        self.game_gui.create_text((300, 20), "")
+        self.game_gui.create_text((300, 20), "spieler", getter=self.get_spieler)
+        self.game_gui.create_text((300, 90), "Status", getter=self.get_status)
+
+        self.tic_tac_x = 100
+        self.tic_tac_y = 140
+        self.tic_tac_lenght = 200
+
+        self.game_gui.create_tictactoe_field((self.tic_tac_x, self.tic_tac_y), self.tic_tac_lenght, self, 3)
 
 
-        self.start_gui.create_text((200, 50), "Tic Tac Toe")
-        self.start_gui.create_button((200, 150), "Online Spielen", self.start_online_game)
-        #self.start_gui.create_button((200, 250), "Offline Spielen", self.start_offline_game)
-        self.start_gui.create_button((200, 250), "Anmelden", send_anmelden)
-        self.start_gui.create_button((200, 300), "Registrieren", send_register)
+        self.start_gui.create_text((300, 50), "Tic Tac Toe")
+        self.start_gui.create_text((300, 100), "Melde dich an um spielen zu können")
+        self.start_gui.create_button((300, 150), "Online Spielen", self.start_online_game)
+        #self.start_gui.create_button((300, 250), "Offline Spielen", self.start_offline_game)
+        self.start_gui.create_button((300, 250), "Anmelden", send_anmelden)
+        self.start_gui.create_button((300, 300), "Registrieren", send_register)
 
         self.start_gui.draw()
 
         self.current_gui = self.start_gui
         #gui.draw_tic_tac_toe_field()
+
+    def get_raume(self):
+        return []
+    
+    def sende_raum(self, index):
+        print(index)
+
+    def init_ultimate_tictactoe(self):
+        for y in range(3):
+            for x in range(3):
+                self.game_gui.create_tictactoe_field((self.tic_tac_x + x/3*200, self.tic_tac_y + y/3*200), self.tic_tac_lenght / 3, self, id=[x, y])
+
 
     def enter_room_code(self):
         code = input("Was ist der Raum Code")
@@ -63,6 +89,15 @@ class Client:
     
     def get_spieler(self):
         return f"Spieler {self.player}"
+    
+    def start_raum_aussuchen(self):
+        pass
+
+    def start_code_eingeben(self):
+        pass
+
+    def start_matchmaking(self):
+        pass
     
     def start_normal(self):
         code = input("Code: ")
@@ -79,9 +114,12 @@ class Client:
 
         for y in range(3):
             for x in range(3):
-                self.current_game[y][x] = [["", "", ""], ["", "", ""], ["", "", ""]]
+                self.current_game[y][x] = [["o", "", ""], ["", "x", ""], ["", "", "o"]]
 
         send_room_code(code, "ultimate")
+        print("ultimate")
+
+        self.init_ultimate_tictactoe()
 
         self.start_game_gui()
 
@@ -115,7 +153,9 @@ class Client:
     def start_game_gui(self):
         self.current_gui = self.game_gui
         self.screen.fill("black")
-        self.current_gui.draw()
+        self.draw()
+        #self.current_gui.draw()
+        self.draw_ultimate()
 
     def offline_verarbeitung(self, pos):
         if not self.check_if_empty(pos[0], pos[1]):
@@ -150,7 +190,10 @@ class Client:
         else:
             self.current_player = 'o'
 
-    def tic_tac_toe_input(self, pos):
+    def tic_tac_toe_input(self, pos, id):
+
+        if self.game_mode == "ultimate":
+            sio.emit('move', [id[0], id[1], pos[0], pos[1]])
 
         #if self.player != self.current_player:
         #    return
@@ -173,6 +216,17 @@ class Client:
         self.screen.fill('black')
         self.current_gui.draw()
 
+        if self.game_mode == "ultimate":
+            self.draw_ultimate()
+
+    def draw_ultimate(self):
+        client.game_gui.buttons[len(client.game_gui.buttons) - 1 -9].drawgg(self.screen)
+
+        for y in range(3):
+            for x in range(3):
+                client.game_gui.buttons[len(client.game_gui.buttons) -9 + self.pos_to_zug([x, y])].draw_single(self.screen, self.current_game[y][x])
+
+        
 
     def start_mode(self):
         pass
@@ -227,8 +281,10 @@ def spiel_startet():
 
 def get_board(data):
     print(data)
-    client.current_game = data['gameboard']
-    client.game_gui.buttons[-1].draw(client.screen)
+    #client.current_game = data['gameboard']
+    #client.game_gui.buttons[-1].draw(client.screen)
+
+    #client.draw_ultimate()
     client.switch_currentplayer()
     if client.current_player == client.player:
         client.status = "Mache einen Zug"
@@ -255,8 +311,6 @@ def code_recieved(data):
     else:
         client.current_player = 'o'
 
-
-    #client.player = client.player_blue
 
     if data['users'] == 2:
         client.start_game()
