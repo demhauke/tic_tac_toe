@@ -1,6 +1,6 @@
 import pygame, socketio, json
 
-
+hintergrundfarbe = (219, 229, 234)
 
 pygame.init()
 from gui import GUI
@@ -25,6 +25,7 @@ class Client:
         self.game_mode = "normal"
         self.currentTurn = 0
         self.status = ""
+        self.screen.fill(hintergrundfarbe)
 
     def create_gui(self):
         self.start_gui = GUI()
@@ -35,7 +36,7 @@ class Client:
 
 
         self.raueme_aussuchen_gui.create_text((300, 100), "Wähle einen Raum aus")
-        self.raueme_aussuchen_gui.create_liste((300, 200), )
+        #self.raueme_aussuchen_gui.create_liste((300, 200), )
 
         self.verbinden_gui.create_button((300, 150), "Raum aussuchen", self.start_raum_aussuchen)
         self.verbinden_gui.create_button((300, 250), "Code eingeben", self.start_code_eingeben)
@@ -137,7 +138,6 @@ class Client:
         self.draw()
 
     def start_online_game(self):
-        # send_anmelden() #ja gerade buggy 
         print("Online")
         self.online = True
         connect_to_server()
@@ -152,10 +152,11 @@ class Client:
 
     def start_game_gui(self):
         self.current_gui = self.game_gui
-        self.screen.fill("black")
+        self.screen.fill(hintergrundfarbe)
         self.draw()
         #self.current_gui.draw()
-        self.draw_ultimate()
+        if self.game_mode == "ultimate":
+            self.draw_ultimate()
 
     def offline_verarbeitung(self, pos):
         if not self.check_if_empty(pos[0], pos[1]):
@@ -193,7 +194,9 @@ class Client:
     def tic_tac_toe_input(self, pos, id):
 
         if self.game_mode == "ultimate":
-            sio.emit('move', [id[0], id[1], pos[0], pos[1]])
+            pos = [id[0], id[1], pos[0], pos[1]]
+            print(pos)
+            sio.emit('move', pos)
 
         #if self.player != self.current_player:
         #    return
@@ -203,7 +206,7 @@ class Client:
 
         #if not self.check_if_empty(pos[0], pos[1]):
         #    return
-        
+        print("normal")
 
         if self.online == True:
             sio.emit('move', pos)
@@ -213,7 +216,7 @@ class Client:
 
 
     def draw(self):
-        self.screen.fill('black')
+        self.screen.fill(hintergrundfarbe)
         self.current_gui.draw()
 
         if self.game_mode == "ultimate":
@@ -261,7 +264,8 @@ def send_anmelden():
     if client.online == True:
         return
 
-    connect_to_server()
+    if not connect_to_server():
+        return
 
     username = input("Gebe ein Username ein: ")
     passwort = input("Gebe ein Passwort ein: ")
@@ -281,8 +285,9 @@ def spiel_startet():
 
 def get_board(data):
     print(data)
-    #client.current_game = data['gameboard']
-    #client.game_gui.buttons[-1].draw(client.screen)
+    client.current_game = data['gameboard']
+    if client.game_mode != "ultimate":
+        client.game_gui.buttons[-1].draw(client.screen)
 
     #client.draw_ultimate()
     client.switch_currentplayer()
@@ -355,6 +360,12 @@ def get_session(data):
     print(data)
     # data["username"]  ["id"]
 
+def sendRooms(räume):
+    print(räume)
+
+def getRooms(type="normal"):
+    sio.emit("getRooms", type)
+
 
 sio = socketio.Client()
 #sio.connect('http://45.9.60.185:8903', transports=['websocket'])
@@ -367,9 +378,16 @@ def connect_to_server():
     if client.online == False:
         with open('data.json') as data:
            adresse = json.load(data)
-        sio.connect(adresse, transports=['websocket'])
+        try:
+
+            sio.connect(adresse, transports=['websocket'])
+        except:
+            
+            print("Server ist nicht online")
+            return False
 
     client.online = True
+    return True
 
 
 
@@ -381,6 +399,7 @@ sio.on("registerError", registerError)
 sio.on("registerSuccess", registerSuccess)
 sio.on("session", get_session)
 sio.on("loginError", loginError)
+sio.on("getRooms", getRooms)
 
 
 

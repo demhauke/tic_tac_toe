@@ -2,6 +2,8 @@ import pygame
 import math
 
 font = pygame.font.SysFont(None, 48)
+buttonfarbe =  (14, 24, 62)
+textfarbe = "white"
 
 class GUI:
     def __init__(self):
@@ -20,7 +22,7 @@ class GUI:
     def create_liste(self, pos, getter, sender):
         self.buttons.append(Liste(pos, getter, sender))
 
-    def create_tictactoe_field(self, pos, lenght, client, dicke=1, id=0):
+    def create_tictactoe_field(self, pos, lenght, client, dicke=1, id=[99, 99]):
         self.buttons.append(Tic_Tac_Toe_field(pos, lenght, client, dicke, id))
 
 
@@ -51,11 +53,11 @@ class Text:
         return self.text
         
     def draw(self, screen):
-        rendered_text = font.render(self.get_text(), True, "black", None)
+        rendered_text = font.render(self.get_text(), True, textfarbe, None)
         self.rect = rendered_text.get_rect(topleft=self.pos)
         self.rect.x = self.pos[0] - rendered_text.get_width() / 2
 
-        pygame.draw.rect(screen, "white", self.rect)
+        pygame.draw.rect(screen, buttonfarbe,  self.rect.inflate(10, 10))
         screen.blit(rendered_text, (self.pos[0] - rendered_text.get_width() / 2, self.pos[1]))
 
 
@@ -93,7 +95,7 @@ class Liste():
 
             
 class Tic_Tac_Toe_field:
-    def __init__(self, pos, length, client, dicke=1, id=0):
+    def __init__(self, pos, length, client, dicke=1, id=[99, 99]):
         self.pos = pygame.Vector2(pos)
         self.length = length
         self.client = client
