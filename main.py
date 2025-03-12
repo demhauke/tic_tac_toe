@@ -26,6 +26,8 @@ class Client:
         self.currentTurn = 0
         self.status = ""
         self.screen.fill(hintergrundfarbe)
+        
+        self.winner = ""
 
     def create_gui(self):
         self.start_gui = GUI()
@@ -33,7 +35,11 @@ class Client:
         self.raueme_gui = GUI()
         self.verbinden_gui = GUI()
         self.raueme_aussuchen_gui = GUI()
+        self.winner_gui = GUI()
 
+
+
+        self.winner_gui.create_text((300, 200), "", self.get_winnertext)
 
         self.raueme_aussuchen_gui.create_text((300, 100), "Wähle einen Raum aus")
         #self.raueme_aussuchen_gui.create_liste((300, 200), )
@@ -68,6 +74,11 @@ class Client:
 
         self.current_gui = self.start_gui
         #gui.draw_tic_tac_toe_field()
+
+    def get_winnertext(self):
+        if self.player == self.winner:
+            return f"{self.username}, du hast Gewonnen"
+        return f"{self.username}, du hast Leider verloren"
 
     def get_raume(self):
         return []
@@ -165,25 +176,6 @@ class Client:
         self.current_game[pos[1]][pos[0]] = self.current_player
 
 
-        
-
-    def zug_to_pos(self, zug):
-        return [zug % 3, zug // 3]
-    
-    def pos_to_zug(self, pos):
-        return pos[0] + pos[1] * 3 
-    
-    def check_if_empty(self, x, y):
-        if self.current_game[y][x] == "":
-            return True
-        return False
-    
-    def check_if_winning(self):
-        pass
-        #for i in range(3):
-        #    if self.current_game[i]
-
-
 
     def switch_currentplayer(self):
         if self.current_player == 'o':
@@ -195,18 +187,11 @@ class Client:
 
         if self.game_mode == "ultimate":
             pos = [id[0], id[1], pos[0], pos[1]]
+            print("ultimate")
             print(pos)
             sio.emit('move', pos)
 
-        #if self.player != self.current_player:
-        #    return
-        
-        #self.switch_currentplayer()
-
-
-        #if not self.check_if_empty(pos[0], pos[1]):
-        #    return
-        print("normal")
+        print(self.game_mode)
 
         if self.online == True:
             sio.emit('move', pos)
@@ -272,6 +257,8 @@ def send_anmelden():
     sio.emit("login", [username, passwort])
     client.online = True
 
+    getRooms()
+
 
 def send_register():
     if client.online == False:
@@ -327,12 +314,12 @@ def code_recieved(data):
 
     client.draw()
 
-    
         
 
 def get_winner(winner):
     print("Der Gewinner ist: " + winner)
-    client.current_gui = client.start_gui
+    client.winner = winner
+    client.current_gui = client.winner_gui
     client.draw()
 
 def get_all_rooms(rooms):
@@ -358,6 +345,7 @@ def registerSuccess(data):
 
 def get_session(data):
     print(data)
+    client.username = data["username"]
     # data["username"]  ["id"]
 
 def sendRooms(räume):
@@ -368,7 +356,6 @@ def getRooms(type="normal"):
 
 
 sio = socketio.Client()
-#sio.connect('http://45.9.60.185:8903', transports=['websocket'])
 @sio.event
 def connect():
     print("Connected")
@@ -399,7 +386,7 @@ sio.on("registerError", registerError)
 sio.on("registerSuccess", registerSuccess)
 sio.on("session", get_session)
 sio.on("loginError", loginError)
-sio.on("getRooms", getRooms)
+sio.on("sendRooms", sendRooms)
 
 
 

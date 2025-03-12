@@ -93,6 +93,40 @@ class Liste():
             if element.rect.collidepoint(pygame.mouse.get_pos()):
                 self.sender(index)
 
+class TextInput(Text):
+    def __init__(self, pos, width, getter=None, sender=None):
+        super().__init__(pos, "", getter)
+        self.pos = pygame.Vector2(pos)
+        self.width = width
+        self.getter = getter  
+        self.sender = sender  
+
+        self.text = "" if not getter else getter()
+        self.active = False
+
+    def draw(self, screen):
+        input_rect = pygame.Rect(self.pos.x, self.pos.y, self.width, 40)
+        pygame.draw.rect(screen, "white" if self.active else "gray", input_rect, 2)
+        
+        text_surface = font.render(self.text, True, textfarbe)
+        screen.blit(text_surface, (self.pos.x + 5, self.pos.y + 5))
+
+    def update(self, event):
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            # Prüfen, ob auf das Eingabefeld geklickt wurde
+            input_rect = pygame.Rect(self.pos.x, self.pos.y, self.width, 40)
+            self.active = input_rect.collidepoint(event.pos)
+
+        if self.active and event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_BACKSPACE:
+                self.text = self.text[:-1]
+            elif event.key == pygame.K_RETURN:
+                if self.sender:
+                    self.sender(self.text)  # Senden des Textes, wenn Sender gesetzt
+                self.active = False
+            else:
+                self.text += event.unicode  # Zeichen hinzufügen
+
             
 class Tic_Tac_Toe_field:
     def __init__(self, pos, length, client, dicke=1, id=[99, 99]):
