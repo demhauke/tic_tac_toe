@@ -1,4 +1,4 @@
-import pygame, socketio, json
+import pygame, socketio, json, random
 
 hintergrundfarbe = (219, 229, 234)
 
@@ -30,7 +30,7 @@ class Client:
         
         self.winner = ""
 
-        self.raume = ["aaa", "adasd"]
+        self.raume = []
 
     def create_gui(self):
         self.start_gui = GUI()
@@ -49,11 +49,12 @@ class Client:
 
 
 
-        self.winner_gui.create_text((300, 200), "", self.get_winnertext)
-        self.winner_gui.create_button((300, 250), "Hauptmenu", self.start_start_gui)
+        self.winner_gui.create_text((300, 150), "", self.get_winnertext)
+        self.winner_gui.create_button((300, 200), "Hauptmenu", self.start_start_gui)
 
-        self.raueme_aussuchen_gui.create_button((200, 40), "zurück", self.start_online_game)
+        self.raueme_aussuchen_gui.create_button((100, 40), "zurück", self.start_online_game)
         self.raueme_aussuchen_gui.create_button((400, 40), "refreshen", self.frage_räume)
+        self.raueme_aussuchen_gui.create_button((300, 100), "Raum erstellen", self.raum_erstellen)
         self.raueme_aussuchen_gui.create_text((300, 150), "Wähle einen Raum aus")
         self.raueme_aussuchen_gui.create_liste((300, 200), self.get_raeume, self.sende_räume)
 
@@ -89,8 +90,21 @@ class Client:
         self.current_gui = self.start_gui
         #gui.draw_tic_tac_toe_field()
 
+    def raum_erstellen(self):
+        code = self.generiere_neuen_wert(self.raume)
+        send_room_code(code, self.game_mode)
+        self.start_game_gui()
+        #self.draw()
+
+    def generiere_neuen_wert(self, arr):
+        while True:
+            neu = ''.join(random.choices("0123456789", k=4))
+            if neu not in arr:
+                return neu
+
     def frage_räume(self):
-        getRooms(self.game_mode)
+        getRooms()
+        self.draw()
 
     def get_raeume(self):
         return self.raume
@@ -178,7 +192,7 @@ class Client:
 
         for y in range(3):
             for x in range(3):
-                self.current_game[y][x] = [["o", "", ""], ["", "x", ""], ["", "", "o"]]
+                self.current_game[y][x] = [["", "", ""], ["", "", ""], ["", "", ""]]
 
         #send_room_code(code, "ultimate")
         print("ultimate")
@@ -231,7 +245,8 @@ class Client:
         
         self.current_game[pos[1]][pos[0]] = self.current_player
 
-
+    def pos_to_zug(self, pos):
+        return pos[0] + pos[1] * 3
 
     def switch_currentplayer(self):
         if self.current_player == 'o':
@@ -394,6 +409,8 @@ def code_recieved(data):
 
 def get_winner(winner):
     print("Der Gewinner ist: " + winner)
+    if winner == "":
+        print("draw")
     client.winner = winner
     client.current_gui = client.winner_gui
     client.draw()
@@ -425,7 +442,12 @@ def get_session(data):
     # data["username"]  ["id"]
 
 def sendRooms(räume):
+    l = []
     print(räume)
+    for raum in räume:
+        l.append(raum['code'])
+    print(l)
+    client.raume = l
 
 def getRooms(type="normal"):
     sio.emit("getRooms", type)

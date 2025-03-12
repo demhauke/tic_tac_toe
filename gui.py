@@ -114,6 +114,9 @@ class TextInput(Text):
 
     def check_active(self):
         self.active = self.rect.collidepoint(pygame.mouse.get_pos())
+        if self.active:
+            self.text = ''
+            #self.client.draw()
 
     def update(self, event):
         if self.active:
@@ -123,6 +126,8 @@ class TextInput(Text):
                     self.client.draw()
                 elif event.key == 13:
                     print(13)
+                    #self.text = ""
+                    #self.client.draw()
                     #self.sender(self.text)  
                     #print(self.sender)
                     self.active = False
