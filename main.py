@@ -22,12 +22,15 @@ class Client:
         ]
 
         self.online = False
+        self.anmelden = True
         self.game_mode = "normal"
         self.currentTurn = 0
         self.status = ""
         self.screen.fill(hintergrundfarbe)
         
         self.winner = ""
+
+        self.raume = ["aaa", "adasd"]
 
     def create_gui(self):
         self.start_gui = GUI()
@@ -36,18 +39,29 @@ class Client:
         self.verbinden_gui = GUI()
         self.raueme_aussuchen_gui = GUI()
         self.winner_gui = GUI()
+        self.anmelden_gui = GUI()
+
+
+        self.anmelden_gui.create_text((300, 50), "", self.get_anmelden_registrieren)
+        self.anmelden_gui.create_textinput((300, 100), "username", False, self)
+        self.anmelden_gui.create_textinput((300, 150), "Passowort", False, self)
+        self.anmelden_gui.create_button((300, 200), "Senden", self.sende_anmelden)
 
 
 
         self.winner_gui.create_text((300, 200), "", self.get_winnertext)
+        self.winner_gui.create_button((300, 250), "Hauptmenu", self.start_start_gui)
 
-        self.raueme_aussuchen_gui.create_text((300, 100), "Wähle einen Raum aus")
-        #self.raueme_aussuchen_gui.create_liste((300, 200), )
+        self.raueme_aussuchen_gui.create_button((200, 40), "zurück", self.start_online_game)
+        self.raueme_aussuchen_gui.create_button((400, 40), "refreshen", self.frage_räume)
+        self.raueme_aussuchen_gui.create_text((300, 150), "Wähle einen Raum aus")
+        self.raueme_aussuchen_gui.create_liste((300, 200), self.get_raeume, self.sende_räume)
 
         self.verbinden_gui.create_button((300, 150), "Raum aussuchen", self.start_raum_aussuchen)
         self.verbinden_gui.create_button((300, 250), "Code eingeben", self.start_code_eingeben)
         self.verbinden_gui.create_button((300, 350), "Matchmaking", self.start_matchmaking)
 
+        self.raueme_gui.create_button((200, 40), "zurück", self.start_start_gui)
         self.raueme_gui.create_button((300, 150), "normal", self.start_normal)
         self.raueme_gui.create_button((300, 250), "ultimate", self.start_ultimate)
         self.raueme_gui.create_button((300, 350), "limited", self.start_limited)
@@ -62,26 +76,64 @@ class Client:
 
         self.game_gui.create_tictactoe_field((self.tic_tac_x, self.tic_tac_y), self.tic_tac_lenght, self, 3)
 
-
+        
         self.start_gui.create_text((300, 50), "Tic Tac Toe")
         self.start_gui.create_text((300, 100), "Melde dich an um spielen zu können")
         self.start_gui.create_button((300, 150), "Online Spielen", self.start_online_game)
         #self.start_gui.create_button((300, 250), "Offline Spielen", self.start_offline_game)
-        self.start_gui.create_button((300, 250), "Anmelden", send_anmelden)
-        self.start_gui.create_button((300, 300), "Registrieren", send_register)
+        self.start_gui.create_button((300, 250), "Anmelden", self.start_anmelden_gui)
+        self.start_gui.create_button((300, 300), "Registrieren", self.start_registrieren_gui)
 
         self.start_gui.draw()
 
         self.current_gui = self.start_gui
         #gui.draw_tic_tac_toe_field()
 
+    def frage_räume(self):
+        getRooms(self.game_mode)
+
+    def get_raeume(self):
+        return self.raume
+    
+    def sende_räume(self, index):
+        send_room_code(self.get_raeume()[index], self.game_mode)
+        self.start_game_gui()
+        print(index)
+
+    def start_raueme_aussuchen_gui(self):
+        self.current_gui = self.raueme_aussuchen_gui
+        self.draw()
+
+    def start_anmelden_gui(self):
+        self.anmelden = True
+        self.current_gui = self.anmelden_gui
+        self.draw()
+
+    def start_registrieren_gui(self):
+        self.anmelden = False
+        self.current_gui = self.anmelden_gui
+        self.draw()
+
+    def sende_anmelden(self):
+        print("anmelden")
+        if self.anmelden:
+            send_anmelden(self.anmelden_gui.text_inputs[0].text, self.anmelden_gui.text_inputs[1].text)
+        else:
+            send_register(self.anmelden_gui.text_inputs[0].text, self.anmelden_gui.text_inputs[1].text)
+        self.start_start_gui()
+
+    def get_anmelden_registrieren(self):
+        if self.anmelden: 
+            return "Anmelden"
+        return "Registrieren"
+
+    def get_anmelden_text(text):
+        print(text)
+
     def get_winnertext(self):
         if self.player == self.winner:
             return f"{self.username}, du hast Gewonnen"
         return f"{self.username}, du hast Leider verloren"
-
-    def get_raume(self):
-        return []
     
     def sende_raum(self, index):
         print(index)
@@ -112,37 +164,37 @@ class Client:
         pass
     
     def start_normal(self):
-        code = input("Code: ")
+        #code = input("Code: ")
         self.game_mode = "normal"
 
-        send_room_code(code, "normal")
+        #send_room_code(code, "normal")
         
 
-        self.start_game_gui()
+        self.start_raueme_aussuchen_gui()
 
     def start_ultimate(self):
-        code = input("Code: ")
+        #code = input("Code: ")
         self.game_mode = "ultimate"
 
         for y in range(3):
             for x in range(3):
                 self.current_game[y][x] = [["o", "", ""], ["", "x", ""], ["", "", "o"]]
 
-        send_room_code(code, "ultimate")
+        #send_room_code(code, "ultimate")
         print("ultimate")
 
         self.init_ultimate_tictactoe()
 
-        self.start_game_gui()
+        self.start_raueme_aussuchen_gui()
 
     def start_limited(self):
-        code = input("Code: ")
+        #code = input("Code: ")
         
         self.game_mode = "limited"
 
-        send_room_code(code, "limited")
+        #send_room_code(code, "limited")
 
-        self.start_game_gui()
+        self.start_raueme_aussuchen_gui()
 
     def start_raume_gui(self):
         self.current_gui = self.raueme_gui
@@ -169,6 +221,10 @@ class Client:
         if self.game_mode == "ultimate":
             self.draw_ultimate()
 
+    def start_start_gui(self):
+        self.current_gui = self.start_gui
+        self.draw()
+
     def offline_verarbeitung(self, pos):
         if not self.check_if_empty(pos[0], pos[1]):
             return
@@ -186,6 +242,8 @@ class Client:
     def tic_tac_toe_input(self, pos, id):
 
         if self.game_mode == "ultimate":
+            if id[0] == 99:
+                return
             pos = [id[0], id[1], pos[0], pos[1]]
             print("ultimate")
             print(pos)
@@ -227,12 +285,25 @@ class Client:
     def run(self):
         running = True
 
+        keys_pressed = set()
+
 
 
         while running:
             for event in pygame.event.get():
+
                 if event.type == pygame.QUIT:
                     running = False
+                try:
+                    if event.key not in keys_pressed:
+                        keys_pressed.add(event.key)
+
+                        self.current_gui.update_textinputs(event)
+
+                    elif event.key in keys_pressed:
+                        keys_pressed.remove(event.key)
+                except:
+                    pass
 
 
 
@@ -245,26 +316,31 @@ def send_room_code(code, spielart=""):
     print(f"{code} wurde gesendet")
     sio.emit("sendCode", [code, spielart])
 
-def send_anmelden():
+def send_anmelden(username, passwort):
+    print((username, passwort))
+
     if client.online == True:
         return
 
     if not connect_to_server():
         return
 
-    username = input("Gebe ein Username ein: ")
-    passwort = input("Gebe ein Passwort ein: ")
+    #username = input("Gebe ein Username ein: ")
+    #passwort = input("Gebe ein Passwort ein: ")
     sio.emit("login", [username, passwort])
     client.online = True
 
     getRooms()
 
 
-def send_register():
-    if client.online == False:
-        connect_to_server()
-    username = input("Gebe ein Username ein: ")
-    passwort = input("Gebe ein Passwort ein: ")
+def send_register(username, passwort):
+    print((username, passwort))
+
+    if client.online == True:
+        return
+
+    if not connect_to_server():
+        return
     sio.emit("register", [username, passwort])
 
 def spiel_startet():

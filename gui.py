@@ -1,5 +1,6 @@
 import pygame
 import math
+import time
 
 font = pygame.font.SysFont(None, 48)
 buttonfarbe =  (14, 24, 62)
@@ -11,6 +12,7 @@ class GUI:
         self.maus_gedrückt = False
 
         self.texts = []
+        self.text_inputs = []
         self.buttons = []
 
     def create_button(self, pos, text, func):
@@ -18,6 +20,9 @@ class GUI:
 
     def create_text(self, pos, text, getter=False):
         self.texts.append(Text(pos, text, getter))
+
+    def create_textinput(self, pos, text, sender, client):
+        self.text_inputs.append(TextInput(pos, text, sender, client))
 
     def create_liste(self, pos, getter, sender):
         self.buttons.append(Liste(pos, getter, sender))
@@ -27,7 +32,7 @@ class GUI:
 
 
     def draw(self):
-        for element in self.texts + self.buttons:
+        for element in self.texts + self.buttons + self.text_inputs:
             element.draw(self.screen)
 
     def update(self):
@@ -40,10 +45,17 @@ class GUI:
         for element in self.buttons:
             element.update()
 
+        for element in self.text_inputs:
+            element.check_active()
+
+    def update_textinputs(self, event):
+        for element in self.text_inputs:
+            element.update(event)
+
 
 class Text:
     def __init__(self, pos, text, getter):
-        self.pos = pos
+        self.pos =  pygame.Vector2(pos)
         self.text = text
 
         if getter:
@@ -58,7 +70,7 @@ class Text:
         self.rect.x = self.pos[0] - rendered_text.get_width() / 2
 
         pygame.draw.rect(screen, buttonfarbe,  self.rect.inflate(10, 10))
-        screen.blit(rendered_text, (self.pos[0] - rendered_text.get_width() / 2, self.pos[1]))
+        screen.blit(rendered_text, (self.pos.x - rendered_text.get_width() / 2, self.pos.y))
 
 
 class Button(Text):
@@ -84,7 +96,7 @@ class Liste():
     def draw(self, screen):
         self.elements = []
         for index, text in enumerate(self.getter()):
-            self.elements.append(Text(self.pos + pygame.Vector2(0, index * 50), text))
+            self.elements.append(Text(self.pos + pygame.Vector2(0, index * 50), text, None))
             self.elements[index].draw(screen)
 
 
@@ -94,38 +106,33 @@ class Liste():
                 self.sender(index)
 
 class TextInput(Text):
-    def __init__(self, pos, width, getter=None, sender=None):
-        super().__init__(pos, "", getter)
-        self.pos = pygame.Vector2(pos)
-        self.width = width
-        self.getter = getter  
-        self.sender = sender  
-
-        self.text = "" if not getter else getter()
+    def __init__(self, pos, text, sender, client):
+        super().__init__(pos, text, getter=False)
         self.active = False
+        self.sender = sender
+        self.client = client
 
-    def draw(self, screen):
-        input_rect = pygame.Rect(self.pos.x, self.pos.y, self.width, 40)
-        pygame.draw.rect(screen, "white" if self.active else "gray", input_rect, 2)
-        
-        text_surface = font.render(self.text, True, textfarbe)
-        screen.blit(text_surface, (self.pos.x + 5, self.pos.y + 5))
+    def check_active(self):
+        self.active = self.rect.collidepoint(pygame.mouse.get_pos())
 
     def update(self, event):
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            # Prüfen, ob auf das Eingabefeld geklickt wurde
-            input_rect = pygame.Rect(self.pos.x, self.pos.y, self.width, 40)
-            self.active = input_rect.collidepoint(event.pos)
+        if self.active:
+            try:
+                if event.key == pygame.K_BACKSPACE:
+                    self.text = self.text[:-1]
+                    self.client.draw()
+                elif event.key == 13:
+                    print(13)
+                    #self.sender(self.text)  
+                    #print(self.sender)
+                    self.active = False
+                else:
+                    self.text += event.unicode 
+                    self.client.draw()
+                    time.sleep(0.2)
+            except:
+                pass
 
-        if self.active and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                self.text = self.text[:-1]
-            elif event.key == pygame.K_RETURN:
-                if self.sender:
-                    self.sender(self.text)  # Senden des Textes, wenn Sender gesetzt
-                self.active = False
-            else:
-                self.text += event.unicode  # Zeichen hinzufügen
 
             
 class Tic_Tac_Toe_field:
