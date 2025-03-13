@@ -23,7 +23,7 @@ class Client:
 
         self.online = False
         self.anmelden = True
-        self.game_mode = "normal"
+        self.game_mode = 'normal'
         self.currentTurn = 0
         self.status = ""
         self.screen.fill(hintergrundfarbe)
@@ -31,6 +31,7 @@ class Client:
         self.winner = ""
 
         self.raume = []
+        self.unfiltered_räume = []
 
     def create_gui(self):
         self.start_gui = GUI()
@@ -44,7 +45,7 @@ class Client:
 
         self.anmelden_gui.create_text((300, 50), "", self.get_anmelden_registrieren)
         self.anmelden_gui.create_textinput((300, 100), "username", False, self)
-        self.anmelden_gui.create_textinput((300, 150), "Passowort", False, self)
+        self.anmelden_gui.create_textinput((300, 150), "Passwort", False, self)
         self.anmelden_gui.create_button((300, 200), "Senden", self.sende_anmelden)
 
 
@@ -54,6 +55,7 @@ class Client:
 
         self.raueme_aussuchen_gui.create_button((100, 40), "zurück", self.start_online_game)
         self.raueme_aussuchen_gui.create_button((400, 40), "refreshen", self.frage_räume)
+        self.raueme_aussuchen_gui.create_button((240, 40), "manuell", self.code_manuel_senden)
         self.raueme_aussuchen_gui.create_button((300, 100), "Raum erstellen", self.raum_erstellen)
         self.raueme_aussuchen_gui.create_text((300, 150), "Wähle einen Raum aus")
         self.raueme_aussuchen_gui.create_liste((300, 200), self.get_raeume, self.sende_räume)
@@ -90,6 +92,10 @@ class Client:
         self.current_gui = self.start_gui
         #gui.draw_tic_tac_toe_field()
 
+    def code_manuel_senden(self):
+        code = input("Gebe einencode ein: ")
+        send_room_code(code, self.game_mode)
+
     def raum_erstellen(self):
         code = self.generiere_neuen_wert(self.raume)
         send_room_code(code, self.game_mode)
@@ -107,7 +113,13 @@ class Client:
         self.draw()
 
     def get_raeume(self):
-        return self.raume
+        l = []
+        print(self.unfiltered_räume)
+        for r in self.unfiltered_räume:
+            if r["type"] == self.game_mode:
+                l.append(r["code"])
+
+        return l
     
     def sende_räume(self, index):
         send_room_code(self.get_raeume()[index], self.game_mode)
@@ -179,7 +191,7 @@ class Client:
     
     def start_normal(self):
         #code = input("Code: ")
-        self.game_mode = "normal"
+        self.game_mode = 'normal'
 
         #send_room_code(code, "normal")
         
@@ -442,6 +454,7 @@ def get_session(data):
     # data["username"]  ["id"]
 
 def sendRooms(räume):
+    client.unfiltered_räume = räume
     l = []
     print(räume)
     for raum in räume:
